@@ -10,8 +10,10 @@ scalaVersion := "2.13.3"
 libraryDependencies += guice
 libraryDependencies += "org.scalatestplus.play" %% "scalatestplus-play" % "5.0.0" % Test
 
-// Adds additional packages into Twirl
-//TwirlKeys.templateImports += "com.gu.controllers._"
-
-// Adds additional packages into conf/routes
-// play.sbt.routes.RoutesKeys.routesImport += "com.gu.binders._"
+enablePlugins(SystemdPlugin, PlayScala, RiffRaffArtifact, JDebPackaging)
+riffRaffUploadArtifactBucket := Option("riffraff-artifact")
+riffRaffUploadManifestBucket := Option("riffraff-builds")
+riffRaffArtifactResources += (file("cfn.yaml"), "cfn/cfn.yaml")
+riffRaffManifestProjectName := s"playground::${name.value}"
+riffRaffPackageType := (packageBin in Debian).value
+packageName in Debian := name.value
