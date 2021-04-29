@@ -5,6 +5,7 @@ deployments:
     type: cloud-formation
     app: acquisition-health-monitor
     parameters:
+      templatePath: cfn.yaml
       amiTags:
         Recipe: xenial-mobile-ARM
         AmigoStage: PROD
