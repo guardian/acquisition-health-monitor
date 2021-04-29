@@ -3,6 +3,8 @@ Description: Acquisition Health Monitor
 Mappings:
   Constants:
     App:
+      Value: acquisition-health-monitor
+    ShortName:
       Value: acq-health-mon
     Stack:
       Value: playground
@@ -122,7 +124,7 @@ Resources:
         - '-'
         - - !FindInMap [ Constants, Stack, Value ]
           - !Ref Stage
-          - !FindInMap [ Constants, App, Value ]
+          - !FindInMap [ Constants, ShortName, Value ]
       Port: 9000
       Protocol: HTTP
       HealthCheckIntervalSeconds: 10
