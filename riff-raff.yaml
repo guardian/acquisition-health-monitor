@@ -1,0 +1,15 @@
+stacks: [playground]
+regions: [eu-west-1]
+deployments:
+  cfn:
+    type: cloud-formation
+    app: acquisition-health-monitor
+    parameters:
+      amiTags:
+        Recipe: xenial-mobile-ARM
+        AmigoStage: PROD
+  acquisition-health-monitor:
+    type: autoscaling
+    dependencies: [cfn]
+    parameters:
+      bucket: developer-playground-dist
