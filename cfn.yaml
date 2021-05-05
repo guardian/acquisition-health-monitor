@@ -83,6 +83,23 @@ Resources:
                   - kinesis:PutRecords
                   - kinesis:DescribeStream
                 Resource: !Sub arn:aws:kinesis:${AWS::Region}:${AWS::AccountId}:stream/mobile-log-aggregation-${Stage}
+              - Effect: Allow
+                Resource: "*"
+                Action:
+                  - ec2messages:AcknowledgeMessage
+                  - ec2messages:DeleteMessage
+                  - ec2messages:FailMessage
+                  - ec2messages:GetEndpoint
+                  - ec2messages:GetMessages
+                  - ec2messages:SendReply
+                  - ssm:UpdateInstanceInformation
+                  - ssm:ListInstanceAssociations
+                  - ssm:DescribeInstanceProperties
+                  - ssm:DescribeDocumentParameters
+                  - ssmmessages:CreateControlChannel
+                  - ssmmessages:CreateDataChannel
+                  - ssmmessages:OpenControlChannel
+                  - ssmmessages:OpenDataChannel
 
   ElasticLoadBalancer:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
@@ -222,5 +239,5 @@ Resources:
       UserData:
         Fn::Base64: !Sub |
             #!/bin/bash -ev
-            aws --region ${AWS::Region} s3 cp s3://${DistBucket}/playground/${Stage}/acquisition-health-monitor/acquisition-health-monitor_1.0-latest_all.deb /tmp
+            aws --region ${AWS::Region} s3 cp s3://${DistBucket}/playground/${Stage}/acquisition-health-monitor/acquisition-health-monitor_1.0-SNAPSHOT_all.deb /tmp
             dpkg -i /tmp/acquisition-health-monitor_1.0-latest_all.deb
