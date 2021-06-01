@@ -229,7 +229,7 @@ Resources:
   AcquisitionHealthMonitorLaunchConfig:
     Type: AWS::AutoScaling::LaunchConfiguration
     Properties:
-      AssociatePublicIpAddress: True
+      AssociatePublicIpAddress: False
       IamInstanceProfile: !Ref InstanceProfile
       ImageId: !Ref AMI
       InstanceType: !FindInMap [ StageVariables, !Ref Stage, InstanceType ]
