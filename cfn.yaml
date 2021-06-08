@@ -241,4 +241,4 @@ Resources:
         Fn::Base64: !Sub |
             #!/bin/bash -ev
             aws --region ${AWS::Region} s3 cp s3://${DistBucket}/playground/${Stage}/acquisition-health-monitor/acquisition-health-monitor_1.0-SNAPSHOT_all.deb /tmp
-            dpkg -i /tmp/acquisition-health-monitor_1.0-latest_all.deb
+            dpkg -i /tmp/acquisition-health-monitor_1.0-SNAPSHOT_all.deb
