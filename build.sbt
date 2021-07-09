@@ -5,12 +5,14 @@ version := "1.0-SNAPSHOT"
 
 lazy val root = (project in file(".")).enablePlugins(PlayScala)
 
-scalaVersion := "2.13.3"
+scalaVersion := "2.13.5"
 
 libraryDependencies += guice
 libraryDependencies += "org.scalatestplus.play" %% "scalatestplus-play" % "5.0.0" % Test
 libraryDependencies += ws
 libraryDependencies += "com.gu" %% "simple-configuration-ssm" % "1.5.6"
+libraryDependencies += "com.fasterxml.jackson.core" % "jackson-databind" % "2.11.4"
+libraryDependencies += "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.12.2"
 
 enablePlugins(SystemdPlugin, PlayScala, RiffRaffArtifact, JDebPackaging)
 riffRaffUploadArtifactBucket := Option("riffraff-artifact")
