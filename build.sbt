@@ -9,6 +9,8 @@ scalaVersion := "2.13.3"
 
 libraryDependencies += guice
 libraryDependencies += "org.scalatestplus.play" %% "scalatestplus-play" % "5.0.0" % Test
+libraryDependencies += ws
+libraryDependencies += "com.gu" %% "simple-configuration-ssm" % "1.5.6"
 
 enablePlugins(SystemdPlugin, PlayScala, RiffRaffArtifact, JDebPackaging)
 riffRaffUploadArtifactBucket := Option("riffraff-artifact")

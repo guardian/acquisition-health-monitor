@@ -7,7 +7,7 @@ deployments:
     parameters:
       templatePath: cfn.yaml
       amiTags:
-        Recipe: xenial-mobile-ARM
+        Recipe: bionic-mobile-ARM
         AmigoStage: PROD
   acquisition-health-monitor:
     type: autoscaling
