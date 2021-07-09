@@ -97,7 +97,7 @@ Resources:
               - Action:
                   - ssm:GetParametersByPath
                 Effect: Allow
-                Resource: !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${Stage}/playground/acquisition-health-monitor
+                Resource: !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/acquisition/CODE/playground
 
   InstanceProfile:
     Type: AWS::IAM::InstanceProfile
