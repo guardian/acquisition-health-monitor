@@ -3,6 +3,8 @@ Description: Acquisition Health Monitor
 Mappings:
   Constants:
     App:
+      Value: acquisition-health-monitor
+    ShortName:
       Value: acq-health-mon
     Stack:
       Value: playground
@@ -39,22 +41,18 @@ Parameters:
     Type: List<AWS::EC2::Subnet::Id>
 
 Resources:
-  DistributionInstanceProfile:
-    Type: AWS::IAM::InstanceProfile
-    Properties:
-      Path: /
-      Roles:
-        - !Ref DistributionRole
-  DistributionRole:
+  AppRole:
     Type: AWS::IAM::Role
     Properties:
+      Path: /
       AssumeRolePolicyDocument:
         Statement:
-          - Action: sts:AssumeRole
-            Effect: Allow
+          - Effect: Allow
             Principal:
-              Service: ec2.amazonaws.com
-      Path: /
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - sts:AssumeRole
       Policies:
         - PolicyName: root
           PolicyDocument:
@@ -62,7 +60,10 @@ Resources:
               - Action: s3:GetObject
                 Effect: Allow
                 Resource: !Sub arn:aws:s3:::${DistBucket}/*
-              - Action: ec2:DescribeTags
+              - Action:
+                  - autoscaling:DescribeAutoScalingInstances
+                  - autoscaling:DescribeAutoScalingGroups
+                  - ec2:DescribeTags
                 Effect: Allow
                 Resource: '*'
               - Action:
@@ -70,17 +71,40 @@ Resources:
                   - logs:*
                 Effect: Allow
                 Resource: '*'
-              - Action:
-                  - autoscaling:DescribeAutoScalingInstances
-                  - autoscaling:DescribeAutoScalingGroups
-                Resource: '*'
-                Effect: Allow
               - Effect: Allow
                 Action:
                   - kinesis:PutRecord
                   - kinesis:PutRecords
                   - kinesis:DescribeStream
                 Resource: !Sub arn:aws:kinesis:${AWS::Region}:${AWS::AccountId}:stream/mobile-log-aggregation-${Stage}
+              - Effect: Allow
+                Resource: "*"
+                Action:
+                  - ec2messages:AcknowledgeMessage
+                  - ec2messages:DeleteMessage
+                  - ec2messages:FailMessage
+                  - ec2messages:GetEndpoint
+                  - ec2messages:GetMessages
+                  - ec2messages:SendReply
+                  - ssm:UpdateInstanceInformation
+                  - ssm:ListInstanceAssociations
+                  - ssm:DescribeInstanceProperties
+                  - ssm:DescribeDocumentParameters
+                  - ssmmessages:CreateControlChannel
+                  - ssmmessages:CreateDataChannel
+                  - ssmmessages:OpenControlChannel
+                  - ssmmessages:OpenDataChannel
+              - Action:
+                  - ssm:GetParametersByPath
+                Effect: Allow
+                Resource: !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/acquisition/CODE/playground
+
+  InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: /
+      Roles:
+        - !Ref AppRole
 
   ElasticLoadBalancer:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
@@ -122,7 +146,7 @@ Resources:
         - '-'
         - - !FindInMap [ Constants, Stack, Value ]
           - !Ref Stage
-          - !FindInMap [ Constants, App, Value ]
+          - !FindInMap [ Constants, ShortName, Value ]
       Port: 9000
       Protocol: HTTP
       HealthCheckIntervalSeconds: 10
@@ -143,6 +167,7 @@ Resources:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: Open up HTTP access to load balancer
+      VpcId: !Ref VpcId
       SecurityGroupEgress:
         - CidrIp: 0.0.0.0/0
           FromPort: 9000
@@ -153,7 +178,6 @@ Resources:
           FromPort: 443
           IpProtocol: tcp
           ToPort: 443
-      VpcId: !Ref VpcId
 
   InstanceSecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -178,6 +202,7 @@ Resources:
   PrivateAcquisitionHealthMonitorAutoscalingGroup:
     Type: AWS::AutoScaling::AutoScalingGroup
     Properties:
+      VPCZoneIdentifier: !Ref PrivateVpcSubnets
       HealthCheckGracePeriod: 400
       HealthCheckType: ELB
       LaunchConfigurationName: !Ref AcquisitionHealthMonitorLaunchConfig
@@ -204,13 +229,12 @@ Resources:
               - !Ref Stage
               - !FindInMap [ Constants, App, Value ]
           PropagateAtLaunch: 'true'
-      VPCZoneIdentifier: !Ref PrivateVpcSubnets
 
   AcquisitionHealthMonitorLaunchConfig:
     Type: AWS::AutoScaling::LaunchConfiguration
     Properties:
-      AssociatePublicIpAddress: True
-      IamInstanceProfile: !Ref DistributionInstanceProfile
+      AssociatePublicIpAddress: False
+      IamInstanceProfile: !Ref InstanceProfile
       ImageId: !Ref AMI
       InstanceType: !FindInMap [ StageVariables, !Ref Stage, InstanceType ]
       SecurityGroups:
@@ -220,5 +244,5 @@ Resources:
       UserData:
         Fn::Base64: !Sub |
             #!/bin/bash -ev
-            aws --region ${AWS::Region} s3 cp s3://${DistBucket}/playground/${Stage}/acquisition-health-monitor/acquisition-health-monitor_1.0-latest_all.deb /tmp
-            dpkg -i /tmp/acquisition-health-monitor_1.0-latest_all.deb
+            aws --region ${AWS::Region} s3 cp s3://${DistBucket}/playground/${Stage}/acquisition-health-monitor/acquisition-health-monitor_1.0-SNAPSHOT_all.deb /tmp
+            dpkg -i /tmp/acquisition-health-monitor_1.0-SNAPSHOT_all.deb
