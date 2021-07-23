@@ -21,3 +21,9 @@ riffRaffArtifactResources += (file("cfn.yaml"), "cfn/cfn.yaml")
 riffRaffManifestProjectName := s"playground::${name.value}"
 riffRaffPackageType := (packageBin in Debian).value
 packageName in Debian := name.value
+
+// AWS
+val awsSdkVersion = "2.16.100"
+val awsCloudwatch = "software.amazon.awssdk" % "cloudwatch" % awsSdkVersion
+
+libraryDependencies ++= Seq(awsCloudwatch)
