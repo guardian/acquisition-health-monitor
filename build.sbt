@@ -8,7 +8,7 @@ lazy val root = (project in file(".")).enablePlugins(PlayScala)
 scalaVersion := "2.13.5"
 
 libraryDependencies += guice
-libraryDependencies += "org.scalatestplus.play" %% "scalatestplus-play" % "5.0.0" % Test
+libraryDependencies += "org.scalatestplus.play" %% "scalatestplus-play" % "5.1.0" % Test
 libraryDependencies += ws
 libraryDependencies += "com.gu" %% "simple-configuration-ssm" % "1.5.6"
 libraryDependencies += "com.fasterxml.jackson.core" % "jackson-databind" % "2.11.4"

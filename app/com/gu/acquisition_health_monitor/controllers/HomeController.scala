@@ -1,7 +1,5 @@
-package controllers
-
-import aws.AwsCloudWatch
-import aws.AwsCloudWatch._
+package com.gu.acquisition_health_monitor.controllers
+import com.gu.acquisition_health_monitor.aws.AwsAcquisitionStatusService
 import play.api.mvc._
 
 import javax.inject._
@@ -21,19 +19,8 @@ class HomeController @Inject()(val controllerComponents: ControllerComponents) e
    * a path of `/`.
    */
   def index() = Action { implicit request: Request[AnyContent] => {
-
-    println("hello")
-      val res = AwsCloudWatch.metricGet(MetricRequest(
-        MetricNamespace("Mapi/PROD/mobile-fronts"),
-        MetricName("ophan-api-success"),
-        Map(
-          //MetricDimensionName("Stage") -> MetricDimensionValue("PROD")
-        ),
-        MetricPeriod(60),
-        MetricStats("Minimum")
-      ), None)
-
-      Ok(views.html.index())
+      val response = AwsAcquisitionStatusService.getAcquisitionNumber
+      Ok(response.toString())
     }
   }
 

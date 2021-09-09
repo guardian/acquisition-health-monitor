@@ -1,12 +1,12 @@
-import com.gu.{AppIdentity, AwsIdentity, DevIdentity}
+package com.gu.acquisition_health_monitor
+
+import controllers.{HomeController}
 import com.gu.conf.{ConfigurationLoader, FileConfigurationLocation, SSMConfigurationLocation}
-import controllers.{Assets, AssetsComponents, HomeController}
-import play.api.{ApplicationLoader, BuiltInComponentsFromContext, Configuration, LoggerConfigurator}
+import com.gu.{AppIdentity, AwsIdentity, DevIdentity}
 import play.api.ApplicationLoader.Context
-import play.api.http.HttpErrorHandler
-import play.api.routing.Router
+import play.api.{ApplicationLoader, BuiltInComponentsFromContext, Configuration, LoggerConfigurator}
+import play.controllers.AssetsComponents
 import play.filters.HttpFiltersComponents
-import router.Routes
 
 import java.io.File
 
@@ -26,12 +26,13 @@ class AcquisitionApplicationLoader extends ApplicationLoader {
     }
 
     val newContext = context.copy(initialConfiguration = context.initialConfiguration ++ Configuration(loadedConfig))
-    (new BuiltInComponentsFromContext(newContext) with MyComponents).application
+    (new MyComponents(newContext)).application
+
   }
 }
 
-trait MyComponents extends BuiltInComponentsFromContext with HttpFiltersComponents with AssetsComponents{
+class MyComponents(context: Context) extends BuiltInComponentsFromContext(context) with HttpFiltersComponents with _root_.controllers.AssetsComponents{
   val homeController = new HomeController(controllerComponents)
-  val assetController = new controllers.Assets(httpErrorHandler, assetsMetadata)
-  lazy val router = new Routes(httpErrorHandler, homeController, assetController)
+  val assetController = new _root_.controllers.Assets(httpErrorHandler, assetsMetadata)
+  lazy val router = new _root_.router.Routes(httpErrorHandler, homeController, assetController)
 }
