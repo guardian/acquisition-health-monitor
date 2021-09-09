@@ -1,8 +1,8 @@
-package controllers
+package com.gu.acquisition_health_monitor.controllers
+import com.gu.acquisition_health_monitor.aws.AwsAcquisitionStatusService
+import play.api.mvc._
 
 import javax.inject._
-import play.api._
-import play.api.mvc._
 
 /**
  * This controller creates an `Action` to handle HTTP requests to the
@@ -18,8 +18,10 @@ class HomeController @Inject()(val controllerComponents: ControllerComponents) e
    * will be called when the application receives a `GET` request with
    * a path of `/`.
    */
-  def index() = Action { implicit request: Request[AnyContent] =>
-    Ok(views.html.index())
+  def index() = Action { implicit request: Request[AnyContent] => {
+      val response = AwsAcquisitionStatusService.getAcquisitionNumber
+      Ok(response.toString())
+    }
   }
 
   def healthCheck() = Action { implicit request: Request[AnyContent] =>

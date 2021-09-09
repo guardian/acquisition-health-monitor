@@ -1,5 +1,6 @@
 package controllers
 
+import com.gu.acquisition_health_monitor.controllers.HomeController
 import org.scalatestplus.play._
 import org.scalatestplus.play.guice._
 import play.api.test._
