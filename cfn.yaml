@@ -59,7 +59,7 @@ Resources:
             Statement:
               - Action: s3:GetObject
                 Effect: Allow
-                Resource: !Sub arn:com.gu.acquisition_health_monitor.aws:s3:::${DistBucket}/*
+                Resource: !Sub arn:aws:s3:::${DistBucket}/*
               - Action:
                   - autoscaling:DescribeAutoScalingInstances
                   - autoscaling:DescribeAutoScalingGroups
@@ -76,7 +76,7 @@ Resources:
                   - kinesis:PutRecord
                   - kinesis:PutRecords
                   - kinesis:DescribeStream
-                Resource: !Sub arn:com.gu.acquisition_health_monitor.aws:kinesis:${AWS::Region}:${AWS::AccountId}:stream/mobile-log-aggregation-${Stage}
+                Resource: !Sub arn:aws:kinesis:${AWS::Region}:${AWS::AccountId}:stream/mobile-log-aggregation-${Stage}
               - Effect: Allow
                 Resource: "*"
                 Action:
@@ -97,7 +97,7 @@ Resources:
               - Action:
                   - ssm:GetParametersByPath
                 Effect: Allow
-                Resource: !Sub arn:com.gu.acquisition_health_monitor.aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/acquisition/CODE/playground
+                Resource: !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/acquisition/CODE/playground
 
   InstanceProfile:
     Type: AWS::IAM::InstanceProfile
