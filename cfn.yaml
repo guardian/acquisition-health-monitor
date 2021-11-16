@@ -18,6 +18,9 @@ Parameters:
   CertArn:
     Type: String
     Description: ACM Certificate for app use
+  MembershipAccessRoleArn:
+    Type: String
+    Description: Membership account role arn
   PublicSubnets:
     Type: List<AWS::EC2::Subnet::Id>
     Description: The public subnets of the VPC for the loadbalancer
@@ -98,6 +101,9 @@ Resources:
                   - ssm:GetParametersByPath
                 Effect: Allow
                 Resource: !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/acquisition/CODE/playground
+              - Action: sts:AssumeRole
+                Effect: Allow
+                Resource: !Ref MembershipAccessRoleArn
 
   InstanceProfile:
     Type: AWS::IAM::InstanceProfile

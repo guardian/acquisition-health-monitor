@@ -9,7 +9,7 @@ import javax.inject._
  * application's home page.
  */
 @Singleton
-class HomeController @Inject()(val controllerComponents: ControllerComponents) extends BaseController {
+class HomeController @Inject()(val controllerComponents: ControllerComponents, awsAcquisitionStatusService: AwsAcquisitionStatusService) extends BaseController {
 
   /**
    * Create an Action to render an HTML page.
@@ -19,7 +19,7 @@ class HomeController @Inject()(val controllerComponents: ControllerComponents) e
    * a path of `/`.
    */
   def index() = Action { implicit request: Request[AnyContent] => {
-      val response = AwsAcquisitionStatusService.getAcquisitionNumber
+      val response = awsAcquisitionStatusService.getAcquisitionNumber
       Ok(response.toString())
     }
   }
