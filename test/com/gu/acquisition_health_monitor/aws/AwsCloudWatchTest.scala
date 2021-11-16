@@ -20,7 +20,7 @@ class AwsCloudWatchTest extends AnyFlatSpec {
       MetricStats("Average")
     )
 
-    val res = AwsCloudWatch.metricGet(request, None)
+    //val res = AwsCloudWatch.metricGet(request, None)
   }
 
 }
