@@ -23,7 +23,7 @@ riffRaffPackageType := (packageBin in Debian).value
 packageName in Debian := name.value
 
 // AWS
-val awsSdkVersion = "2.17.64"
+val awsSdkVersion = "2.16.100"
 val awsCloudwatch = "software.amazon.awssdk" % "cloudwatch" % awsSdkVersion
 val awsSts = "software.amazon.awssdk" % "sts" % awsSdkVersion
 
