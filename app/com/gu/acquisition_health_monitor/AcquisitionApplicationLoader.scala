@@ -17,7 +17,7 @@ class AcquisitionApplicationLoader extends ApplicationLoader {
     LoggerConfigurator(context.environment.classLoader) foreach { _.configure(context.environment) }
 
     val identity = AppIdentity.whoAmI(defaultAppName = "myApp")
-    val loadedConfig = ConfigurationLoader.load(identity, ProfileCredentialsProvider.builder.profileName("developerPlayground").build()) {
+    val loadedConfig = ConfigurationLoader.load(identity) {
       case _ => SSMConfigurationLocation(s"/acquisition/CODE/playground")
 
 //      case AwsIdentity(app, stack, stage, _) =>
