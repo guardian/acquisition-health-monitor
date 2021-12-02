@@ -16,6 +16,7 @@ class AwsAcquisitionStatusService(assumeRoleArn: Option[String]) extends Acquisi
             {
               val req: AssumeRoleRequest = AssumeRoleRequest.builder
                 .roleArn(roleArn)
+                .roleSessionName("testAR")
                 .build()
 
               val stsClient: StsClient = StsClient.builder.build()
