@@ -8,27 +8,30 @@ import play.api.ApplicationLoader.Context
 import play.api.{ApplicationLoader, BuiltInComponentsFromContext, Configuration, LoggerConfigurator, Mode}
 import play.filters.HttpFiltersComponents
 import software.amazon.awssdk.auth.credentials.{InstanceProfileCredentialsProvider, ProfileCredentialsProvider}
-
-import java.io.File
+import scala.util.Success
 
 class AcquisitionApplicationLoader extends ApplicationLoader {
   def load(context: Context) = {
 
     LoggerConfigurator(context.environment.classLoader) foreach { _.configure(context.environment) }
-
-    val identity = AppIdentity.whoAmI(defaultAppName = "myApp")
-
     val isDev = context.environment.mode == Mode.Dev
 
-    val credentialsProvider = if(isDev) {
-       ProfileCredentialsProvider.builder().profileName("developerPlayground").build()
-    } else {
-      InstanceProfileCredentialsProvider.builder().build()
+    val (identity, credentialsProvider) = if (isDev)
+      (
+        Success(DevIdentity("developerPlayground")),
+        ProfileCredentialsProvider.builder().profileName("developerPlayground").build()
+      )
+    else {
+      val provider = InstanceProfileCredentialsProvider.builder().build()
+      (
+        AppIdentity.whoAmI(defaultAppName = "myApp", provider),
+        provider
+      )
     }
 
-    val loadedConfig = ConfigurationLoader.load(identity, credentialsProvider) {
-      case DevIdentity(_) => SSMConfigurationLocation(s"/acquisition/DEV/playground")
-      case AwsIdentity(app, stack, stage, _) => SSMConfigurationLocation(s"/acquisition/$stage/$stack")
+    val loadedConfig = ConfigurationLoader.load(identity.get, credentialsProvider) {
+      case DevIdentity(_) => SSMConfigurationLocation(s"/acquisition/DEV/playground", "eu-west-1")
+      case AwsIdentity(app, stack, stage, _) => SSMConfigurationLocation(s"/acquisition/$stage/$stack", "eu-west-1")
     }
 
     val newContext = context.copy(initialConfiguration = context.initialConfiguration ++ Configuration(loadedConfig))
