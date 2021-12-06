@@ -3,11 +3,11 @@ package com.gu.acquisition_health_monitor
 import com.gu.acquisition_health_monitor.aws.AwsAcquisitionStatusService
 import controllers.HomeController
 import com.gu.conf.{ConfigurationLoader, SSMConfigurationLocation}
-import com.gu.{AppIdentity}
+import com.gu.{AppIdentity, AwsIdentity, DevIdentity}
 import play.api.ApplicationLoader.Context
-import play.api.{ApplicationLoader, BuiltInComponentsFromContext, Configuration, LoggerConfigurator}
+import play.api.{ApplicationLoader, BuiltInComponentsFromContext, Configuration, LoggerConfigurator, Mode}
 import play.filters.HttpFiltersComponents
-import software.amazon.awssdk.auth.credentials.ProfileCredentialsProvider
+import software.amazon.awssdk.auth.credentials.{InstanceProfileCredentialsProvider, ProfileCredentialsProvider}
 
 import java.io.File
 
@@ -17,15 +17,18 @@ class AcquisitionApplicationLoader extends ApplicationLoader {
     LoggerConfigurator(context.environment.classLoader) foreach { _.configure(context.environment) }
 
     val identity = AppIdentity.whoAmI(defaultAppName = "myApp")
-    val loadedConfig = ConfigurationLoader.load(identity) {
-      case _ => SSMConfigurationLocation(s"/acquisition/CODE/playground")
 
-//      case AwsIdentity(app, stack, stage, _) =>
-//        SSMConfigurationLocation(s"/acquisition/$stage/$stack")
-//
-//      case DevIdentity(_) =>
-//        val home = System.getProperty("user.home")
-//        FileConfigurationLocation(new File(s"/${home}/.gu/acquisition-health.monitor.conf"))
+    val isDev = context.environment.mode == Mode.Dev
+
+    val credentialsProvider = if(isDev) {
+       ProfileCredentialsProvider.builder().profileName("developerPlayground").build()
+    } else {
+      InstanceProfileCredentialsProvider.builder().build()
+    }
+
+    val loadedConfig = ConfigurationLoader.load(identity, credentialsProvider) {
+      case DevIdentity(_) => SSMConfigurationLocation(s"/acquisition/DEV/playground")
+      case AwsIdentity(app, stack, stage, _) => SSMConfigurationLocation(s"/acquisition/$stage/$stack")
     }
 
     val newContext = context.copy(initialConfiguration = context.initialConfiguration ++ Configuration(loadedConfig))
