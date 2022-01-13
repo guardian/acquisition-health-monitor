@@ -8,19 +8,7 @@ class AwsCloudWatchTest extends AnyFlatSpec {
   behavior of "AwsCloudWatchTest"
 
   it should "metricGet" in {
-    val request = MetricRequest(
-      MetricNamespace("support-frontend"),
-      MetricName("PaymentSuccess"),
-      Map(
-        MetricDimensionName("PaymentProvider") -> MetricDimensionValue("Stripe"),
-        MetricDimensionName("ProductType") -> MetricDimensionValue("Contribution"),
-        MetricDimensionName("Stage") -> MetricDimensionValue("PROD"),
-      ),
-      MetricPeriod(60),
-      MetricStats("Average")
-    )
 
-    //val res = AwsCloudWatch.metricGet(request, None)
   }
 
 }

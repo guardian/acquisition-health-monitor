@@ -16,18 +16,17 @@ class AcquisitionApplicationLoader extends ApplicationLoader {
     LoggerConfigurator(context.environment.classLoader) foreach { _.configure(context.environment) }
     val isDev = context.environment.mode == Mode.Dev
 
-    val (identity, credentialsProvider) = if (isDev)
-      (
-        Success(DevIdentity("developerPlayground")),
+    val credentialsProvider =
+      if (isDev)
         ProfileCredentialsProvider.builder().profileName("developerPlayground").build()
-      )
-    else {
-      val provider = InstanceProfileCredentialsProvider.builder().build()
-      (
-        AppIdentity.whoAmI(defaultAppName = "myApp", provider),
-        provider
-      )
-    }
+      else
+        InstanceProfileCredentialsProvider.builder().build()
+
+    val identity =
+      if (isDev)
+        Success(DevIdentity("developerPlayground"))
+      else
+        AppIdentity.whoAmI(defaultAppName = "myApp", credentialsProvider)
 
     val loadedConfig = ConfigurationLoader.load(identity.get, credentialsProvider) {
       case DevIdentity(_) => SSMConfigurationLocation(s"/acquisition/DEV/playground", "eu-west-1")
