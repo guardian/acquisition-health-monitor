@@ -10,9 +10,9 @@ Mappings:
       Value: playground
   StageVariables:
     CODE:
-      InstanceType: "t4g.nano"
+      InstanceType: "t4g.small"
     PROD:
-      InstanceType: "t4g.nano"
+      InstanceType: "t4g.small"
 
 Parameters:
   CertArn:
@@ -252,3 +252,4 @@ Resources:
             #!/bin/bash -ev
             aws --region ${AWS::Region} s3 cp s3://${DistBucket}/playground/${Stage}/acquisition-health-monitor/acquisition-health-monitor_1.0-SNAPSHOT_all.deb /tmp
             dpkg -i /tmp/acquisition-health-monitor_1.0-SNAPSHOT_all.deb
+            /opt/cloudwatch-logs/configure-logs application ${Stack} ${Stage} ${App} /var/log/acquisition-health-monitor/application.log '%Y-%m-%dT%H:%M:%S,%f%z'
