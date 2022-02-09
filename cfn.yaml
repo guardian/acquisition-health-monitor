@@ -11,8 +11,10 @@ Mappings:
   StageVariables:
     CODE:
       InstanceType: "t4g.small"
+      DNSName: acquisition-health-monitor.code.dev-gutools.co.uk
     PROD:
       InstanceType: "t4g.small"
+      DNSName: acquisition-health-monitor.gutools.co.uk
 
 Parameters:
   CertArn:
@@ -248,8 +250,23 @@ Resources:
       MetadataOptions:
         HttpTokens: required
       UserData:
-        Fn::Base64: !Sub |
+        Fn::Base64: !Sub
+          - |+
             #!/bin/bash -ev
             aws --region ${AWS::Region} s3 cp s3://${DistBucket}/playground/${Stage}/acquisition-health-monitor/acquisition-health-monitor_1.0-SNAPSHOT_all.deb /tmp
             dpkg -i /tmp/acquisition-health-monitor_1.0-SNAPSHOT_all.deb
             /opt/cloudwatch-logs/configure-logs application ${Stack} ${Stage} ${App} /var/log/acquisition-health-monitor/application.log '%Y-%m-%dT%H:%M:%S,%f%z'
+          - {
+            Stack: !FindInMap [ Constants, Stack, Value ],
+            App: !FindInMap [ Constants, App, Value ]
+          }
+
+  LoadBalancerDNSRecord:
+    Type: Guardian::DNS::RecordSet
+    Properties:
+      Name: !FindInMap [ StageVariables, !Ref Stage, DNSName ]
+      ResourceRecords:
+        - !GetAtt ElasticLoadBalancer.DNSName
+      TTL: 3600
+      RecordType: CNAME
+      Stage: !Ref Stage
