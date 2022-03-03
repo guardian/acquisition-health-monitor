@@ -19,7 +19,7 @@ class AwsAcquisitionStatusService(assumeRoleArn: Option[String]) extends Acquisi
 
     val acquisitionStatus = result match {
       case Left(error) => AcquisitionStatusError(error)
-      case Right(dataPoints) => AcquisitionStatusSuccess(dataPoints.head.values.sum.toInt)
+      case Right(dataPoints) => AcquisitionStatusSuccess(dataPoints.head.values.sum.toInt)//TODO
     }
 
     Map[String, AcquisitionStatus]("Contribution" ->  acquisitionStatus)

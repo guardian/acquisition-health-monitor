@@ -38,11 +38,17 @@ class AwsCloudWatch(credential:  AwsCredentialsProviderChain) {
   def getAllMetrics(request: MetricRequest): Either[String, List[Map[Instant, Double]]]= {
     for {
       listOfAllMetrics <- listMetrics()
-      allMetrics <- metricGet(request, None, listOfAllMetrics)
+      allMetrics <- metricGet(request, None, listOfAllMetrics, Nil)
     } yield AwsToScala(allMetrics)
   }
 
-  def metricGet(request: MetricRequest, nextToken: Option[String], listMetricsResponse: ListMetricsResponse): Either[String, GetMetricDataResponse] = {
+  def metricGet(
+    request: MetricRequest,
+    nextToken: Option[String],
+    listMetricsResponse: ListMetricsResponse,
+    soFar: List[GetMetricDataResponse]
+  ): Either[String, List[GetMetricDataResponse]] = {
+
     val metricDataRequest: GetMetricDataRequest = buildMetricRequest(request, listMetricsResponse, nextToken)
 
     val failableResult = Try {
@@ -51,34 +57,28 @@ class AwsCloudWatch(credential:  AwsCredentialsProviderChain) {
 
     for {
       value <- failableResult
-      metricResults <-  Option(value.nextToken) match {
-        case Some(next) => {
-          metricGet(request, Some(next), listMetricsResponse)
-        }
-        case None => {
-         Right(value)
-        }
+      metricResults <- Option(value.nextToken) match {
+        case Some(next) =>
+          metricGet(request, Some(next), listMetricsResponse, value :: soFar)
+        case None =>
+         Right((value :: soFar).reverse)
       }
+    } yield metricResults
+  }
+
+  private def AwsToScala(responses: List[GetMetricDataResponse]) =
+    for {
+      response <- responses
+      metricResult <- response.metricDataResults().asScala.toList
     } yield {
-      metricResults
-    }
-  }
-
-  private def AwsToScala(value: GetMetricDataResponse) = {
-    val metricResults = value.metricDataResults().asScala.toList
-    val results = metricResults.map {
-      metricResult => {
-        println("value size: " + metricResult.values.size)
-        println("The label is " + metricResult.label())
-        println("The status code is " + metricResult.statusCode().toString())
-        val timestamps = metricResult.timestamps().asScala.toList
-        val values = metricResult.values().asScala.toList.map(x => x.toDouble)
-        timestamps.zip(values).toMap
-      }
+      println("value size: " + metricResult.values.size) // FIXME use the logger properly so it goes into the right place
+      println("The label is " + metricResult.label())
+      println("The status code is " + metricResult.statusCode().toString())
+      val timestamps = metricResult.timestamps().asScala.toList
+      val values = metricResult.values().asScala.toList.map(x => x.toDouble)
+      timestamps.zip(values).toMap
     }
 
-    results
-  }
 }
 
 object AwsCloudWatch {
@@ -108,8 +108,8 @@ object AwsCloudWatch {
   private[aws] def buildMetricRequest(request: MetricRequest, listMetricResponse: ListMetricsResponse, nextToken: Option[String]): GetMetricDataRequest = {
 
     //println("Now: " + Instant.now())
-    val start = Instant.parse("2022-01-13T10:00:00Z")
-    val endDate = Instant.parse("2022-01-13T16:00:00Z")
+    val start = Instant.parse("2022-03-03T10:00:00Z")
+    val endDate = Instant.parse("2022-03-03T16:00:00Z")
 
 
     val queries = listMetricResponse.metrics().asScala.zipWithIndex.map {
