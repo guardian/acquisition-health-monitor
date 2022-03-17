@@ -4,24 +4,28 @@ import _root_.com.gu.acquisition_health_monitor.{AcquisitionStatus, AcquisitionS
 import com.gu.acquisition_health_monitor.aws.AwsAccess._
 import com.gu.acquisition_health_monitor.aws.AwsCloudWatch.{MetricPeriod, MetricRequest, MetricStats}
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProviderChain
+import java.time.Instant
 
 class AwsAcquisitionStatusService(assumeRoleArn: Option[String]) extends AcquisitionStatusService {
   def getCredentialFromAssumeRole: AwsCredentialsProviderChain =
     assumeRoleArn.map(assumeRoleForAws).getOrElse(membershipLocal)
 
-  override def getAcquisitionNumber: Map[String, AcquisitionStatus] = {
+  override def getAcquisitionNumber: AcquisitionStatus = {
     val request = MetricRequest(
       MetricPeriod(60),
-      MetricStats("Sum")
+      MetricStats("Sum"),
+      start = Instant.parse("2022-03-03T10:00:00Z"),
+      endDate = Instant.parse("2022-03-03T16:00:00Z")
     )
 
-    val result = new AwsCloudWatch(getCredentialFromAssumeRole).getAllMetrics(request)
+    val result = new AwsCloudWatch(getCredentialFromAssumeRole).getAllPaymentSuccessMetrics(request)
 
-    val acquisitionStatus = result match {
+    result match {
       case Left(error) => AcquisitionStatusError(error)
-      case Right(dataPoints) => AcquisitionStatusSuccess(dataPoints.head.values.sum.toInt)
+      case Right(metricsDataPerProduct) => AcquisitionStatusSuccess(metricsDataPerProduct.map { case (successLabel, dataPoints) =>
+        successLabel -> dataPoints.values.sum.toInt
+      })
     }
 
-    Map[String, AcquisitionStatus]("Contribution" ->  acquisitionStatus)
   }
 }
