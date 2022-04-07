@@ -35,31 +35,18 @@ class AwsCloudWatch(credential:  AwsCredentialsProviderChain) {
   def getAllPaymentSuccessMetrics(request: MetricRequest): Either[String, Map[String, Map[Instant, Double]]]= {
     for {
       listOfAllMetrics <- listPaymentSuccessMetrics()
-      allMetrics <- getMetricDataFromMetrics(new MetricRequestBuilder(request, listOfAllMetrics), None, Nil)
+      allMetrics <- getMetricDataFromMetrics(nextToken => aaa(new MetricRequestBuilder(request, listOfAllMetrics), nextToken), None, Nil)
     } yield groupMetricDataByProduct(allMetrics)
   }
 
-  def getMetricDataFromMetrics(
-    metricRequestBuilder: MetricRequestBuilder,
-    nextToken: Option[String],
-    soFar: List[GetMetricDataResponse]
-  ): Either[String, List[GetMetricDataResponse]] = {
+  def aaa(metricRequestBuilder: MetricRequestBuilder, nextToken: Option[String]) = {
 
-    val metricDataRequest: GetMetricDataRequest = metricRequestBuilder.build(nextToken)
+      val metricDataRequest: GetMetricDataRequest = metricRequestBuilder.build(nextToken)
 
-    val failableResult = Try {
-      client.getMetricData(metricDataRequest)
-    }.toEither.left.map(x => x.toString)
+      Try {
+        client.getMetricData(metricDataRequest)
+      }.toEither.left.map(x => x.toString)
 
-    for {
-      value <- failableResult
-      metricResults <- Option(value.nextToken) match {
-        case Some(next) =>
-          getMetricDataFromMetrics(metricRequestBuilder, Some(next), value :: soFar)
-        case None =>
-         Right((value :: soFar).reverse)
-      }
-    } yield metricResults
   }
 
   private def groupMetricDataByProduct(responsePages: List[GetMetricDataResponse]) = {
@@ -142,4 +129,37 @@ object AwsCloudWatch {
         .build()
     }
   }
+}
+
+object Testable {
+
+  trait HasNextToken[R] {
+    def nextToken(r: R): String
+  }
+  // in the normal code
+  implicit val a: HasNextToken[GetMetricDataResponse] = (r: GetMetricDataResponse) => r.nextToken()
+
+  // in the test code:
+  case class TestableNext(nextToken: String)
+  implicit val b: HasNextToken[TestableNext] = (r: TestableNext) => r.nextToken
+
+  def getMetricDataFromMetrics[R: HasNextToken](
+    getResponse: Option[String] => Either[String, R],
+    nextToken: Option[String],
+    soFar: List[R]
+  ): Either[String, List[R]] = {
+
+    val failableResult: Either[String, R] = getResponse(nextToken)
+
+    for {
+      value <- failableResult
+      metricResults <- Option(implicitly[HasNextToken[R]].nextToken(value)) match {
+        case Some(next) =>
+          getMetricDataFromMetrics(getResponse, Some(next), value :: soFar)
+        case None =>
+          Right((value :: soFar).reverse)
+      }
+    } yield metricResults
+  }
+
 }
