@@ -1,5 +1,6 @@
 package com.gu.acquisition_health_monitor.aws
 
+import com.gu.acquisition_health_monitor.MultiPageResultFetcher
 import com.gu.acquisition_health_monitor.aws.AwsCloudWatch.{MetricRequest, MetricRequestBuilder}
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProviderChain
 import software.amazon.awssdk.regions.Region.EU_WEST_1
@@ -35,7 +36,12 @@ class AwsCloudWatch(credential:  AwsCredentialsProviderChain) {
   def getAllPaymentSuccessMetrics(request: MetricRequest): Either[String, Map[String, Map[Instant, Double]]]= {
     for {
       listOfAllMetrics <- listPaymentSuccessMetrics()
-      allMetrics <- getMetricDataFromMetrics(nextToken => aaa(new MetricRequestBuilder(request, listOfAllMetrics), nextToken), None, Nil)
+      allMetrics <- MultiPageResultFetcher.fetchAllPages(
+        nextToken => aaa(new MetricRequestBuilder(request, listOfAllMetrics), nextToken),
+        None,
+        Nil,
+        (r: GetMetricDataResponse) => Option(r.nextToken())
+      )
     } yield groupMetricDataByProduct(allMetrics)
   }
 
@@ -131,35 +137,4 @@ object AwsCloudWatch {
   }
 }
 
-object Testable {
 
-  trait HasNextToken[R] {
-    def nextToken(r: R): String
-  }
-  // in the normal code
-  implicit val a: HasNextToken[GetMetricDataResponse] = (r: GetMetricDataResponse) => r.nextToken()
-
-  // in the test code:
-  case class TestableNext(nextToken: String)
-  implicit val b: HasNextToken[TestableNext] = (r: TestableNext) => r.nextToken
-
-  def getMetricDataFromMetrics[R: HasNextToken](
-    getResponse: Option[String] => Either[String, R],
-    nextToken: Option[String],
-    soFar: List[R]
-  ): Either[String, List[R]] = {
-
-    val failableResult: Either[String, R] = getResponse(nextToken)
-
-    for {
-      value <- failableResult
-      metricResults <- Option(implicitly[HasNextToken[R]].nextToken(value)) match {
-        case Some(next) =>
-          getMetricDataFromMetrics(getResponse, Some(next), value :: soFar)
-        case None =>
-          Right((value :: soFar).reverse)
-      }
-    } yield metricResults
-  }
-
-}
