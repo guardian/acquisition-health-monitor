@@ -109,7 +109,7 @@ Resources:
               - Action:
                   - dynamodb:*
                 Effect: Allow
-                Resource: !Sub arn:aws:dynamodb:*:${AWS::AccountId}:table/${Stack}-${Stage}-LIVE
+                Resource: !Sub arn:aws:dynamodb:*:${AWS::AccountId}:table/playground-${Stage}-LIVE
 
   InstanceProfile:
     Type: AWS::IAM::InstanceProfile
