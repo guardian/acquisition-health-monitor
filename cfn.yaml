@@ -106,7 +106,8 @@ Resources:
               - Action: sts:AssumeRole
                 Effect: Allow
                 Resource: !Ref MembershipAccessRoleArn
-              - Action: dynamodb:*
+              - Action:
+                  - dynamodb:*
                 Effect: Allow
                 Resource: !Sub arn:aws:dynamodb:*:${AWS::AccountId}:table/${Stack}-${Stage}-LIVE
 
