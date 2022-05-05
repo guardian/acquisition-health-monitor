@@ -44,6 +44,9 @@ Parameters:
   PrivateVpcSubnets:
     Description: Private subnets to use for EC2 instances
     Type: List<AWS::EC2::Subnet::Id>
+  SomeTestParameter:
+    Description: just to test adding a parameter
+    Type: String
 
 Resources:
   AppRole:
