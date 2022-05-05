@@ -1,7 +1,7 @@
 package com.gu.acquisition_health_monitor.aws
 
 import com.gu.acquisition_health_monitor.MultiPageResultFetcher
-import com.gu.acquisition_health_monitor.aws.AwsCloudWatch.{MetricRequest, MetricRequestBuilder}
+import com.gu.acquisition_health_monitor.aws.AwsCloudWatch.{MetricRequest, getLabelFromDimension}
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProviderChain
 import software.amazon.awssdk.regions.Region.EU_WEST_1
 import software.amazon.awssdk.services.cloudwatch.CloudWatchClient
@@ -11,8 +11,6 @@ import java.time.Instant
 import scala.jdk.CollectionConverters._
 import scala.util.Try
 
-
-
 class AwsCloudWatch(credential:  AwsCredentialsProviderChain) {
   val client: CloudWatchClient = CloudWatchClient
     .builder
@@ -21,6 +19,13 @@ class AwsCloudWatch(credential:  AwsCredentialsProviderChain) {
     .build()
 
   println(s"client: ${client}")
+
+  def getAllPaymentSuccessMetrics(request: MetricRequest): Either[String, Map[String, Map[Instant, Double]]]= {
+    for {
+      listOfAllMetrics <- listPaymentSuccessMetrics()
+      allMetrics <- getMetricsFromList(request, listOfAllMetrics)
+    } yield groupMetricDataByProduct(allMetrics)
+  }
 
   private def listPaymentSuccessMetrics(): Either[String, ListMetricsResponse] = {
     val listMetricsRequest: ListMetricsRequest = ListMetricsRequest.builder()
@@ -33,25 +38,46 @@ class AwsCloudWatch(credential:  AwsCredentialsProviderChain) {
     }.toEither.left.map(x => x.toString)
   }
 
-  def getAllPaymentSuccessMetrics(request: MetricRequest): Either[String, Map[String, Map[Instant, Double]]]= {
-    for {
-      listOfAllMetrics <- listPaymentSuccessMetrics()
-      allMetrics <- MultiPageResultFetcher.fetchAllPages(
-        nextToken => aaa(new MetricRequestBuilder(request, listOfAllMetrics), nextToken),
-        None,
-        Nil,
-        (r: GetMetricDataResponse) => Option(r.nextToken())
-      )
-    } yield groupMetricDataByProduct(allMetrics)
-  }
+  def getMetricsFromList(request: MetricRequest, listOfAllMetrics: ListMetricsResponse): Either[String, List[GetMetricDataResponse]] =
+    MultiPageResultFetcher.fetchAllPages(
+      getResponse = new MetricDataFetcher(request, listOfAllMetrics).getForPage,
+      extractToken = (r: GetMetricDataResponse) => Option(r.nextToken())
+    )
 
-  def aaa(metricRequestBuilder: MetricRequestBuilder, nextToken: Option[String]) = {
+  class MetricDataFetcher(request: MetricRequest, listMetricResponse: ListMetricsResponse) {
 
-      val metricDataRequest: GetMetricDataRequest = metricRequestBuilder.build(nextToken)
+    private val queries = listMetricResponse.metrics().asScala.zipWithIndex.map {
+      case (metric, index) =>
+        val metricStat = MetricStat.builder
+          .stat(request.stat.value)
+          .period(request.period.value)
+          .metric(metric)
+          .build()
+
+        MetricDataQuery.builder
+          .metricStat(metricStat)
+          .id("id" + index)
+          .label(getLabelFromDimension(index, metric.dimensions().asScala.toList))
+          .returnData(true).build()
+    }
+
+    private val partialBuilder = GetMetricDataRequest.builder
+      //.maxDatapoints(200)
+      .startTime(request.start)
+      .endTime(request.endDate)
+      .metricDataQueries(queries.asJava)
+
+    def getForPage(nextToken: Option[String]) = {
+
+      val metricDataRequest = partialBuilder
+        .nextToken(nextToken.orNull)
+        .build()
 
       Try {
         client.getMetricData(metricDataRequest)
       }.toEither.left.map(x => x.toString)
+
+    }
 
   }
 
@@ -106,35 +132,6 @@ object AwsCloudWatch {
     label1 + "-" + label2
   }
 
-  private class MetricRequestBuilder(request: MetricRequest, listMetricResponse: ListMetricsResponse) {
-
-    def build(nextToken: Option[String]): GetMetricDataRequest = {
-
-      val queries = listMetricResponse.metrics().asScala.zipWithIndex.map {
-        case (metric, index) => {
-          val metricStat = MetricStat.builder
-            .stat(request.stat.value)
-            .period(request.period.value)
-            .metric(metric)
-            .build()
-
-          MetricDataQuery.builder
-            .metricStat(metricStat)
-            .id("id" + index)
-            .label(getLabelFromDimension(index, metric.dimensions().asScala.toList))
-            .returnData(true).build()
-        }
-      }
-
-      GetMetricDataRequest.builder
-        //.maxDatapoints(200)
-        .startTime(request.start)
-        .endTime(request.endDate)
-        .metricDataQueries(queries.asJava)
-        .nextToken(nextToken.orNull)
-        .build()
-    }
-  }
 }
 
 
