@@ -4,17 +4,17 @@ object MultiPageResultFetcher {
 
   /*
   this function
-  keeps calling getResponse with the next token until getNextTokenFromR returns None
+  keeps calling getResponse with the next token until extractToken returns None
    */
-  def fetchAllPages[R](
-    getResponse: Option[String] => Either[String, R], // pass in None to get the first page
-    extractToken: R => Option[String] // return None to mean "no more pages"
-  ): Either[String, List[R]] = {
+  def fetchAllPages[RESPONSE](
+    getResponse: Option[String] => Either[String, RESPONSE], // pass in None to get the first page
+    extractToken: RESPONSE => Option[String] // return None to mean "no more pages"
+  ): Either[String, List[RESPONSE]] = {
 
     def fetchAllPages0(
       token: Option[String],
-      soFar: List[R]
-    ): Either[String, List[R]] =
+      soFar: List[RESPONSE]
+    ): Either[String, List[RESPONSE]] =
       for {
         value <- getResponse(token)
         metricResults <- extractToken(value) match {
