@@ -10,12 +10,12 @@ class AwsAcquisitionStatusService(assumeRoleArn: Option[String]) extends Acquisi
   def getCredentialFromAssumeRole: AwsCredentialsProviderChain =
     assumeRoleArn.map(assumeRoleForAws).getOrElse(membershipLocal)
 
-  override def getAcquisitionNumber: AcquisitionStatus = {
+  override def getAcquisitionNumber(startDate: Instant, endDate: Instant): AcquisitionStatus = {
     val request = MetricRequest(
       MetricPeriod(60),
       MetricStats("Sum"),
-      start = Instant.parse("2022-03-03T10:00:00Z"),
-      endDate = Instant.parse("2022-03-03T16:00:00Z")
+      start = startDate,
+      endDate = endDate
     )
 
     val result = new AwsCloudWatch(getCredentialFromAssumeRole).getAllPaymentSuccessMetrics(request)

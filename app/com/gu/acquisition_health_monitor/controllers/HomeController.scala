@@ -2,7 +2,10 @@ package com.gu.acquisition_health_monitor.controllers
 import com.gu.acquisition_health_monitor.aws.AwsAcquisitionStatusService
 import play.api.mvc._
 
+import java.time.Instant
+import java.time.format.DateTimeParseException
 import javax.inject._
+import scala.util.Try
 
 /**
  * This controller creates an `Action` to handle HTTP requests to the
@@ -18,10 +21,19 @@ class HomeController @Inject()(val controllerComponents: ControllerComponents, a
    * will be called when the application receives a `GET` request with
    * a path of `/`.
    */
-  def index() = Action { implicit request: Request[AnyContent] => {
-      val response = awsAcquisitionStatusService.getAcquisitionNumber
+  def index(start: String, end: String) = Action { implicit request: Request[AnyContent] => {
+
+    val rrr: Try[Result] = for {
+      startDate <- Try(Instant.parse(start)) //"2022-03-03T10:00:00Z"
+      endDate <- Try(Instant.parse(end)) //"2022-03-03T16:00:00Z"
+    } yield {
+      val response = awsAcquisitionStatusService.getAcquisitionNumber(startDate, endDate)
       Ok(response.toString())
     }
+    rrr.fold({
+      case t: DateTimeParseException => BadRequest("")
+      case t: Throwable => InternalServerError("")
+    })(identity _)
   }
 
   def healthCheck() = Action { implicit request: Request[AnyContent] =>
