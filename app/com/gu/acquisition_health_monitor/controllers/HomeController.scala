@@ -21,19 +21,19 @@ class HomeController @Inject()(val controllerComponents: ControllerComponents, a
    * will be called when the application receives a `GET` request with
    * a path of `/`.
    */
-  def index(start: String, end: String) = Action { implicit request: Request[AnyContent] => {
+  def index(start: String, end: String): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
 
-    val rrr: Try[Result] = for {
+    val failableResult: Try[Result] = for {
       startDate <- Try(Instant.parse(start)) //"2022-03-03T10:00:00Z"
       endDate <- Try(Instant.parse(end)) //"2022-03-03T16:00:00Z"
     } yield {
       val response = awsAcquisitionStatusService.getAcquisitionNumber(startDate, endDate)
-      Ok(response.toString())
+      Ok(response.toString()) // TODO change to JSON
     }
-    rrr.fold({
-      case t: DateTimeParseException => BadRequest("")
-      case t: Throwable => InternalServerError("")
-    })(identity _)
+    failableResult.recover({
+      case t: DateTimeParseException =>
+        BadRequest("bad request, invalid time (TODO something useful)")
+    }).get
   }
 
   def healthCheck() = Action { implicit request: Request[AnyContent] =>
