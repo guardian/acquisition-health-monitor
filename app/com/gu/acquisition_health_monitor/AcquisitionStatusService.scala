@@ -1,5 +1,7 @@
 package com.gu.acquisition_health_monitor
 
+import java.time.Instant
+
 
 sealed trait AcquisitionStatus
 
@@ -8,5 +10,5 @@ case class AcquisitionStatusError(error: String) extends AcquisitionStatus
 
 trait AcquisitionStatusService {
   // maybe using enum for string
-  def getAcquisitionNumber: AcquisitionStatus
+  def getAcquisitionNumber(startDate: Instant, endDate: Instant): AcquisitionStatus
 }
