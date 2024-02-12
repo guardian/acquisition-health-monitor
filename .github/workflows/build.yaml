@@ -1,0 +1,46 @@
+# Find full documentation here https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions
+name: CI
+
+on:
+  pull_request:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  CI:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      # Setup AWS credentials to enable uploading to S3 for Riff-Raff.
+      # See https://github.com/aws-actions/configure-aws-credentials
+      - uses: aws-actions/configure-aws-credentials@v4
+        name: setup-riffraff-credentials
+        with:
+          role-to-assume: ${{ secrets.GU_RIFF_RAFF_ROLE_ARN }}
+          aws-region: eu-west-1
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: '11'
+          distribution: 'corretto'
+          cache: 'sbt'
+      - name: Compile and package project
+        run: sbt test clean debian:packageBin
+      - name: Upload to Riff-Raff
+        uses: guardian/actions-riff-raff@v3
+        with:
+          app: acquisition-health-monitor
+          githubToken: ${{ secrets.GITHUB_TOKEN }}
+          projectName: playground::acquisition-health-monitor
+          buildNumberOffset: 67
+          configPath: ./riff-raff.yaml
+          contentDirectories: |
+            cfn:
+              - ./cfn.yaml
+            acquisition-health-monitor:
+              - target/acquisition-health-monitor_1.0-SNAPSHOT_all.deb
